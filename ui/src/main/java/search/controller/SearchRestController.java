@@ -6,7 +6,7 @@ import search.dto.SearchRequest;
 import search.dto.SearchResponse;
 import search.service.SearchService;
 
-import java.util.List;
+import java.util.Set;
 
 @RequestMapping("/api/text/search/")
 @RestController
@@ -16,7 +16,7 @@ public class SearchRestController {
     private final SearchService searchService;
 
     @PostMapping("/by-original")
-    public List<SearchResponse> getIndexes(@RequestBody SearchRequest searchRequest){
-        return searchService.getTextOccurences(searchRequest);
+    public Set<SearchResponse> getIndexes(@RequestBody SearchRequest searchRequest){
+        return searchService.getTextOccurrences(searchRequest);
     }
 }

@@ -5,10 +5,7 @@ import search.dto.SearchRequest;
 import search.dto.SearchResponse;
 import search.service.SearchService;
 
-import java.util.List;
-
-import static org.junit.jupiter.api.Assertions.assertArrayEquals;
-import static org.junit.jupiter.api.Assertions.assertTrue;
+import java.util.Set;
 
 public class SearchServiceTest {
 
@@ -22,19 +19,18 @@ public class SearchServiceTest {
         String cleanedText = "bke";
         int[] expectedResult = new int[]{1, 4, 5};
 
-        List<SearchResponse> actualResult = searchService.getTextOccurences(new SearchRequest(originalText, cleanedText, 1, 6));
+        Set<SearchResponse> actualResult = searchService.getTextOccurrences(new SearchRequest(originalText, cleanedText, 1, 6));
 
         System.out.println(actualResult);
     }
 
     @Test
     public void getTruncatedIndexesTest2(){
-        //String originalText = "abc kekbke";
-        String originalText = "abc keebke";
-        String cleanedText = "sbkez";
+        String originalText = "sabc keebkez";
+        String cleanedText = "sbkekz";
         int[] expectedResult = new int[]{1, 4, 5};
 
-        List<SearchResponse> actualResult = searchService.getTextOccurences(new SearchRequest(originalText, cleanedText, 1, 6));
+        Set<SearchResponse> actualResult = searchService.getTextOccurrences(new SearchRequest(originalText, cleanedText, 1, 6));
 
         System.out.println(actualResult);
     }

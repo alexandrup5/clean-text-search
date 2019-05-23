@@ -5,7 +5,7 @@ import search.Searcher;
 import search.dto.SearchRequest;
 import search.dto.SearchResponse;
 
-import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -13,33 +13,61 @@ import java.util.stream.Collectors;
 @Service
 public class SearchService {
 
-    public List<SearchResponse> getTextOccurences(SearchRequest request){
+    /**'
+     * Returns text occurrences bounds of one text into another filtered by bounds
+     * @param request
+     * @return
+     */
+    public Set<SearchResponse> getTextOccurrences(SearchRequest request){
+        if (request.getSelectStartIndex()== request.getSelectEndIndex())
+            return null;
+
         Searcher searcher = new Searcher(request.getOriginalText(), request.getCleanText());
         Set<Integer[]> allCombinations = searcher.execute();
 
-        List<int[]> allTruncatedCombinations = getTruncatedIndexes(request.getOriginalText(), request.getCleanText(),
-                request.getSelectStartIndex(), request.getSelectEndIndex(),
-                allCombinations);
+        List<int[]> truncatedCombinations = getTruncatedIndexes(request.getSelectStartIndex(), request.getSelectEndIndex(), allCombinations);
 
-        if (allCombinations.isEmpty()){
+        if (truncatedCombinations.isEmpty()){
             return null;
         } else {
-            List<SearchResponse> occurrences = new ArrayList<>();
-            String reconstructedCleanText = reconstructFromOriginalText(allTruncatedCombinations.get(0), request.getOriginalText());
+            Set<SearchResponse> occurrences = new HashSet<>();
 
-            for (int[] indexes : allTruncatedCombinations) {
-                int startIndex = 0;
-                while (request.getCleanText().indexOf(reconstructedCleanText, startIndex) != -1) {
-                    int beginIndex = request.getCleanText().indexOf(reconstructedCleanText, startIndex);
-                    int endIndex = beginIndex + reconstructedCleanText.length();
-                    startIndex = endIndex - 1;
-
-                    occurrences.add(new SearchResponse(beginIndex, endIndex));
+            for (int[] truncatedIndexes: truncatedCombinations) {
+                String reconstructedPartialCleanText = reconstructFromOriginalText(truncatedIndexes, request.getOriginalText());
+                if (reconstructedPartialCleanText.isEmpty()) {
+                    continue;
+                } else {
+                    Set<SearchResponse> subOccurences = getBoundsByOccurrences(request.getCleanText(), reconstructedPartialCleanText);
+                    occurrences.addAll(subOccurences);
                 }
             }
 
             return occurrences;
         }
+    }
+
+    /**
+     * Fetches all bounds of the subtext in
+     * @param sourceText text to find in
+     * @param subText subtext to search in sourceText
+     * @return set of bounds where this text can be found
+     */
+    private Set<SearchResponse> getBoundsByOccurrences(String sourceText, String subText) {
+        Set<SearchResponse> bounds = new HashSet<>();
+
+        int startIndex = 0;
+        while (sourceText.indexOf(subText, startIndex) != -1 && startIndex < sourceText.length()) {
+            int beginIndex = sourceText.indexOf(subText, startIndex);
+            int endIndex = beginIndex + subText.length();
+            startIndex = endIndex;
+
+            if (endIndex - beginIndex == 0)
+                break;
+
+            bounds.add(new SearchResponse(beginIndex +1, endIndex));
+        }
+
+        return bounds;
     }
 
     /**
@@ -58,34 +86,43 @@ public class SearchService {
         return reconstructedString.toString();
     }
 
-    private List<int[]> getTruncatedIndexes(String originalText, String cleanText, int startIndex, int endIndex, Set<Integer[]> allCombinations) {
+    /**
+     * Returns truncated indexes from the original text by bounds
+     * @param startIndex start bound of truncation
+     * @param endIndex end bound of truncation
+     * @param allCombinations indexes of the original text that contains all combination of clean text in original text
+     * @return
+     */
+    private List<int[]> getTruncatedIndexes(int startIndex, int endIndex, Set<Integer[]> allCombinations) {
         return allCombinations.stream()
-                .map(array -> convertToIntArray(array))
-                .filter(positions -> isBetween(positions, startIndex, endIndex))
+                .map(array -> truncate(startIndex, endIndex, array))
+                //.filter(array -> array.length <= 1)
                 .collect(Collectors.toList());
     }
 
-    private int[] convertToIntArray(Integer[] sourceArray) {
-        int lastNullIndex = -1;
+    /**
+     * Removes from array that are outside of the bounds
+     * @param startIndex low bound
+     * @param endIndex high bound
+     * @param array source array for filtering
+     * @return
+     */
+    private int[] truncate(int startIndex, int endIndex, Integer[] array){
+        int[] inBounds = new int[endIndex - startIndex + 1];
+        for (int i = 0; i < inBounds.length; i++)
+            inBounds[i] = -1;
 
-        for (int i = 0; i < sourceArray.length; i++){
-            if (sourceArray[i] == null) {
-                lastNullIndex = i;
-                break;
+        int resultCounter = 0;
+        for (int i = 0; i < array.length; i++){
+            if (array[i] != null && startIndex <= array[i] && array[i] < endIndex){
+                inBounds[resultCounter++] = array[i];
             }
         }
 
-        int resultLength = lastNullIndex == -1 ? sourceArray.length : lastNullIndex;
-        int[] cleanConvertedArray = new int[resultLength];
+        int[] filteredArray = new int[resultCounter];
+        for (int i = 0; i < resultCounter; i++)
+            filteredArray[i] = inBounds[i];
 
-        for (int i = 0; i < resultLength; i++){
-            cleanConvertedArray[i] = sourceArray[i];
-        }
-
-        return cleanConvertedArray;
-    }
-
-    private boolean isBetween(int[] positions, int startIndex, int endIndex) {
-        return startIndex <= positions[0] && positions[positions.length-1] <= endIndex;
+        return filteredArray;
     }
 }
