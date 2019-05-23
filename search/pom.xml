@@ -29,7 +29,7 @@
     <groupId>clean-text-search</groupId>
     <artifactId>search</artifactId>
     <version>1.0-SNAPSHOT</version>
-    <packaging>pom</packaging>
+    <packaging>jar</packaging>
 
 
     <dependencies>

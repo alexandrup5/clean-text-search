@@ -35,11 +35,24 @@ public class Searcher {
                 if (cleanedChars[clIdx] == originalChars[orIdx]) {
                     occurredIndexes[resultIndex] = orIdx;
 
-                    boolean result = execute(orIdx +1, clIdx + 1,
-                            originalChars, cleanedChars,
-                            resultIndex + 1, occurredIndexes,
-                            foundCharacters +1,
-                            indexesPositions);
+                    boolean result;
+
+                    if (foundCharacters == cleanedChars.length-1){
+                        indexesPositions.add(Arrays.copyOf(occurredIndexes, occurredIndexes.length));
+                        occurredIndexes[resultIndex] = null;
+
+                        result = execute(orIdx +1, clIdx + 1,
+                                originalChars, cleanedChars,
+                                resultIndex + 1, occurredIndexes,
+                                foundCharacters,
+                                indexesPositions);
+                    } else {
+                        result = execute(orIdx + 1, clIdx + 1,
+                                originalChars, cleanedChars,
+                                resultIndex + 1, occurredIndexes,
+                                foundCharacters + 1,
+                                indexesPositions);
+                    }
 
                     if (!result) {
                         occurredIndexes[resultIndex+1] = null;
@@ -49,16 +62,7 @@ public class Searcher {
                     }
                 }
             }
-
-            //output if reachedEnd and found all chars
-            if (foundCharacters == cleanedChars.length-1){
-                return true;
-            } else {
-                if (resultIndex > 0) {
-                    occurredIndexes[resultIndex - 1] = null;
-                }
-                return false;
-            }
+            return false;
         }
         return false;
     }

@@ -10,5 +10,6 @@ import lombok.*;
 public class SearchRequest {
     String originalText;
     String cleanText;
-    String selectedText;
+    int selectStartIndex;
+    int selectEndIndex;
 }

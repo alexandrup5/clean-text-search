@@ -14,7 +14,8 @@ new Vue({
             axios.post(url, {
                     "originalText": originalText,
                     "cleanText": cleanText,
-                    "selectedText": selectedText
+                    "selectStartIndex": selectedText.selectStartIndex,
+                    "selectEndIndex": selectedText.selectEndIndex
                 },
                 { headers: {"Access-Control-Allow-Origin": "*"}})
                 .then(response => {
@@ -29,7 +30,10 @@ new Vue({
             var dom = document.getElementById("original-textarea");
             var start = dom.selectionStart;
             var finish = dom.selectionEnd;
-            return dom.value.substring(start, finish);
+            return {
+                selectStartIndex: start,
+                selectEndIndex: finish
+            }
         },
 
         selectText(indexes){
