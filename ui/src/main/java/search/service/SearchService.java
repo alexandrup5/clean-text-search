@@ -5,6 +5,7 @@ import search.Searcher;
 import search.dto.SearchRequest;
 import search.dto.SearchResponse;
 
+import java.util.Arrays;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
@@ -37,11 +38,10 @@ public class SearchService {
                 if (reconstructedPartialCleanText.isEmpty()) {
                     continue;
                 } else {
-                    Set<SearchResponse> subOccurences = getBoundsByOccurrences(request.getCleanText(), reconstructedPartialCleanText);
+                    Set<SearchResponse> subOccurences = getIndexes(request.getCleanText(), reconstructedPartialCleanText);
                     occurrences.addAll(subOccurences);
                 }
             }
-
             return occurrences;
         }
     }
@@ -52,21 +52,16 @@ public class SearchService {
      * @param subText subtext to search in sourceText
      * @return set of bounds where this text can be found
      */
-    private Set<SearchResponse> getBoundsByOccurrences(String sourceText, String subText) {
+    private Set<SearchResponse> getIndexes(String sourceText, String subText) {
         Set<SearchResponse> bounds = new HashSet<>();
 
-        int startIndex = 0;
-        while (sourceText.indexOf(subText, startIndex) != -1 && startIndex < sourceText.length()) {
-            int beginIndex = sourceText.indexOf(subText, startIndex);
-            int endIndex = beginIndex + subText.length();
-            startIndex = endIndex;
-
-            if (endIndex - beginIndex == 0)
-                break;
-
-            bounds.add(new SearchResponse(beginIndex +1, endIndex));
+        int positions[] = new int[subText.length()];
+        int startIndex = sourceText.indexOf(subText, 0);
+        for (int i = 0; i < subText.length(); i++){
+            positions[i] = i + startIndex;
         }
 
+        bounds.add(new SearchResponse(positions));
         return bounds;
     }
 
@@ -96,7 +91,7 @@ public class SearchService {
     private List<int[]> getTruncatedIndexes(int startIndex, int endIndex, Set<Integer[]> allCombinations) {
         return allCombinations.stream()
                 .map(array -> truncate(startIndex, endIndex, array))
-                //.filter(array -> array.length <= 1)
+                .filter(array -> array.length > 1)
                 .collect(Collectors.toList());
     }
 
@@ -114,7 +109,7 @@ public class SearchService {
 
         int resultCounter = 0;
         for (int i = 0; i < array.length; i++){
-            if (array[i] != null && startIndex <= array[i] && array[i] < endIndex){
+            if (array[i] != null && startIndex <= array[i] && array[i] <= endIndex){
                 inBounds[resultCounter++] = array[i];
             }
         }

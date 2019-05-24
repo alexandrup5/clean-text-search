@@ -36,22 +36,23 @@ new Vue({
             }
         },
 
-        selectText(bounds){
+        selectText(indexes){
             var innerText = $("#clean-textarea").val();
 
-            bounds.forEach((bound, idx) => {
+            indexes.forEach((positions, indexIdx) => {
                 var resultText = "";
                 var lastIndex = 0;
 
-                if (bound.start !== 0){
-                    resultText = innerText.substring(0, bound.start -1);
+                var innerTextArray = innerText.split("");
+
+                for (var i = 0; i < innerTextArray.length; i++){
+                    if ( positions.indexes.includes(i) ){
+                        resultText += "<u>" + innerTextArray[i] + "</u>";  
+                    } else {
+                        resultText += innerTextArray[i];
+                    }
                 }
 
-                resultText += "[" + innerText.substring(bound.start -1, bound.end) + "]";    
-                lastIndex = bound.end;   
-  
-                resultText += innerText.substring(lastIndex, innerText.length);
-                
                 $("#results").append("<li>" + resultText + "</li>");
             });
 

@@ -8,7 +8,7 @@ import lombok.ToString;
 @AllArgsConstructor
 @Getter
 @EqualsAndHashCode
+@ToString
 public class SearchResponse {
-    int start;
-    int end;
+    int indexes[];
 }
