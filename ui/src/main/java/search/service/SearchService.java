@@ -5,119 +5,57 @@ import search.Searcher;
 import search.dto.SearchRequest;
 import search.dto.SearchResponse;
 
-import java.util.Arrays;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Set;
+import java.util.*;
 import java.util.stream.Collectors;
 
 @Service
 public class SearchService {
 
-    /**'
+    /**
+     * '
      * Returns text occurrences bounds of one text into another filtered by bounds
+     *
      * @param request
      * @return
      */
-    public Set<SearchResponse> getTextOccurrences(SearchRequest request){
-        if (request.getSelectStartIndex()== request.getSelectEndIndex())
+    public Set<SearchResponse> getTextOccurrences(SearchRequest request) {
+        if (request.getSelectStartIndex() == request.getSelectEndIndex())
             return null;
 
         Searcher searcher = new Searcher(request.getOriginalText(), request.getCleanText());
         Set<Integer[]> allCombinations = searcher.execute();
 
-        List<int[]> truncatedCombinations = getTruncatedIndexes(request.getSelectStartIndex(), request.getSelectEndIndex(), allCombinations);
+        //List of mappings of original-text-character-index [to] clean-text-character-index
+        List<Integer[]> truncatedCombinations = getTruncatedIndexes(allCombinations, request.getSelectStartIndex(), request.getSelectEndIndex(), request.getCleanText().length());
 
-        if (truncatedCombinations.isEmpty()){
-            return null;
-        } else {
-            Set<SearchResponse> occurrences = new HashSet<>();
+        Set<SearchResponse> occurrences = truncatedCombinations.stream().map(arrayIn -> {
+            int[] arrayOut = new int[arrayIn.length];
 
-            for (int[] truncatedIndexes: truncatedCombinations) {
-                String reconstructedPartialCleanText = reconstructFromOriginalText(truncatedIndexes, request.getOriginalText());
-                if (reconstructedPartialCleanText.isEmpty()) {
-                    continue;
-                } else {
-                    Set<SearchResponse> subOccurences = getIndexes(request.getCleanText(), reconstructedPartialCleanText);
-                    occurrences.addAll(subOccurences);
+            for (int i = 0; i < arrayIn.length; i++){
+                arrayOut[i] = arrayIn[i];
+            }
+
+            return new SearchResponse(arrayOut);
+        }).collect(Collectors.toSet());
+
+        return occurrences;
+    }
+
+    private List<Integer[]> getTruncatedIndexes(Set<Integer[]> allCombinations, int selectStartIndex, int selectEndIndex, int cleanTextLength) {
+        List<Integer[]> truncatedIndexes = new ArrayList<>();
+
+        for (Integer[] positions: allCombinations){
+            List<Integer> indexesAsList = new ArrayList<>();
+
+            for (int i = 0; i < cleanTextLength; i++){
+                if (positions[i] >= selectStartIndex && positions[i] < selectEndIndex) {
+                    indexesAsList.add(i);
                 }
             }
-            return occurrences;
-        }
-    }
-
-    /**
-     * Fetches all bounds of the subtext in
-     * @param sourceText text to find in
-     * @param subText subtext to search in sourceText
-     * @return set of bounds where this text can be found
-     */
-    private Set<SearchResponse> getIndexes(String sourceText, String subText) {
-        Set<SearchResponse> bounds = new HashSet<>();
-
-        int positions[] = new int[subText.length()];
-        int startIndex = sourceText.indexOf(subText, 0);
-        for (int i = 0; i < subText.length(); i++){
-            positions[i] = i + startIndex;
+            truncatedIndexes.add(indexesAsList.toArray(new Integer[0]));
         }
 
-        bounds.add(new SearchResponse(positions));
-        return bounds;
+        return truncatedIndexes;
     }
 
-    /**
-     * Selects text by indexes from originalText
-     * @param indexes indexes which to select from originalText
-     * @param originalText text from which selection must be done
-     * @return a substring of the original by input indexes
-     */
-    private String reconstructFromOriginalText(int[] indexes, String originalText) {
-        StringBuilder reconstructedString = new StringBuilder();
-
-        for (int i :indexes){
-            reconstructedString.append(originalText.charAt(i));
-        }
-
-        return reconstructedString.toString();
-    }
-
-    /**
-     * Returns truncated indexes from the original text by bounds
-     * @param startIndex start bound of truncation
-     * @param endIndex end bound of truncation
-     * @param allCombinations indexes of the original text that contains all combination of clean text in original text
-     * @return
-     */
-    private List<int[]> getTruncatedIndexes(int startIndex, int endIndex, Set<Integer[]> allCombinations) {
-        return allCombinations.stream()
-                .map(array -> truncate(startIndex, endIndex, array))
-                .filter(array -> array.length > 1)
-                .collect(Collectors.toList());
-    }
-
-    /**
-     * Removes from array that are outside of the bounds
-     * @param startIndex low bound
-     * @param endIndex high bound
-     * @param array source array for filtering
-     * @return
-     */
-    private int[] truncate(int startIndex, int endIndex, Integer[] array){
-        int[] inBounds = new int[endIndex - startIndex + 1];
-        for (int i = 0; i < inBounds.length; i++)
-            inBounds[i] = -1;
-
-        int resultCounter = 0;
-        for (int i = 0; i < array.length; i++){
-            if (array[i] != null && startIndex <= array[i] && array[i] <= endIndex){
-                inBounds[resultCounter++] = array[i];
-            }
-        }
-
-        int[] filteredArray = new int[resultCounter];
-        for (int i = 0; i < resultCounter; i++)
-            filteredArray[i] = inBounds[i];
-
-        return filteredArray;
-    }
 }
