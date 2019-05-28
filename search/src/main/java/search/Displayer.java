@@ -12,12 +12,12 @@ public class Displayer {
 
     public void displayToConsole() {
         for (Integer[] positions: allCombinations){
-            char[][] displayMatrix = generateDisplayMatrix(positions);
+            String[][] displayMatrix = generateDisplayMatrix(positions);
             outputToConsole(displayMatrix);
         }
     }
 
-    private void outputToConsole(char[][] displayMatrix) {
+    private void outputToConsole(String[][] displayMatrix) {
         System.out.println("********************************************************");
 
         for (int y = 0; y < displayMatrix.length; y++){
@@ -41,19 +41,19 @@ public class Displayer {
      * @return
      * @param positions
      */
-    private char[][] generateDisplayMatrix(Integer[] positions) {
-        char[][] displayMatrix = new char[3][originalText.length()];
+    private String[][] generateDisplayMatrix(Integer[] positions) {
+        String[][] displayMatrix = new String[3][originalText.length()];
 
         for (int x = 0; x < originalText.length(); x++){
-            displayMatrix[0][x] = originalText.charAt(x);
-            displayMatrix[1][x] = ' ';
-            displayMatrix[2][x] = ' ';
+            displayMatrix[0][x] = originalText.charAt(x) + "";
+            displayMatrix[1][x] = " ";
+            displayMatrix[2][x] = " ";
         }
 
         for (int x = 0; x < cleanText.length(); x++){
             try {
-                displayMatrix[1][positions[x]] = cleanText.charAt(x);
-                displayMatrix[2][positions[x]] = Character.forDigit(x, 10);
+                displayMatrix[1][positions[x]] = cleanText.charAt(x) + "";
+                displayMatrix[2][positions[x]] = Integer.toString(x);
             } catch (NullPointerException ex){
                 ex.printStackTrace();
             }
